@@ -189,18 +189,6 @@ Insert the following line:
 
 22 6 * * * apt-get update && apt-get --download-only --assume-yes dist-upgrade
 
-STEP. Bring in Personal programs and scripts
-============================================
-
-- Bring in directories ~/work and /var/lib/myprogs from archives.
-
-STEP. Install myprogs and use it to install remaining packages
-==============================================================
-
-- Install myprogs from ~/work/src/myprogs
-
-- Use 'myprogs print', 'myprogs check' and 'myprogs sync' to install all wanted packages
-
 STEP. Personalize X
 ===================
 
@@ -254,7 +242,15 @@ sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.5 60 --
 sudo update-alternatives --config clang
 sudo update-alternatives --config gcc
 
-STEP. Install personal scripts
-==============================
+STEP. Bring in Personal programs and scripts
+============================================
 
-- Install necessary stuff from ~/work directory structure.
+- Clone https://github.com/zamar/admin repository with 'git clone'
+
+- Install things src/ script/ config/ directories
+
+STEP. Use myprogs to install remaining packages
+==============================================================
+
+- Use 'myprogs init', 'myprogs print', 'myprogs check' and 'myprogs sync' to install all wanted packages
+
