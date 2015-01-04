@@ -1,0 +1,99 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use IPC::Open2;
+use IO::Select;
+
+use Statistics::Descriptive;
+
+if (   $#ARGV == 0 
+    && ($ARGV[0] eq '-h' || $ARGV[0] eq '-?' || $ARGV[0] eq '--help')) {
+  print "Usage: mybench [depth = 13] [cycles = 32] [threads = 1] [type = depth]\n";
+  exit 1;
+}
+
+my $depth = shift;
+my $cycles = shift;
+my $threads = shift;
+my $type = shift;
+
+$depth = 13 if !defined($depth);
+$cycles = 32 if !defined($cycles);
+$cycles = 1 if !defined($cycles);
+$threads = 1 if !defined($threads);
+$type="depth" if !defined($type);
+
+my $stat_time = Statistics::Descriptive::Full->new();
+my $stat_nodes = Statistics::Descriptive::Full->new();
+my $stat_speed = Statistics::Descriptive::Full->new();
+
+print "Running test with depth: $depth, cycles: $cycles, threads: $threads.\n\n";
+
+for (my $i = 1; $i <= $cycles; $i++) {
+  print "Starting test $i/$cycles\n"; 
+
+  local (*Reader, *Writer);
+  my $pid = open2(\*Reader, \*Writer, "./stockfish bench 16 $threads $depth default $type 2>&1 1>/dev/null");
+
+  my $s = IO::Select->new();
+  $s->add(\*Reader);
+
+  my $line;
+  my $time;
+  my $nodes;
+  my $speed;
+
+  while($line = <Reader>) {
+    chomp $line;
+    print "$line\n"; 
+
+    if ($line =~ /Nodes searched  : (\d+)/) {
+      $nodes = $1;
+    }
+    
+    if ($line =~ /Total time \(ms\) : (\d+)/) {
+      $time = $1;
+    }
+    
+    if (defined($time) && defined($nodes)) {
+      $speed = $nodes / $time;
+      $stat_nodes->add_data($nodes);
+      $stat_time->add_data($time);
+      $stat_speed->add_data($speed);
+
+      print "Nodes: $nodes\n";
+      print "Time: $time\n";
+      print "Speed: $speed\n";
+
+      print Writer "x\n";
+      last;
+    }
+  }
+  waitpid($pid, 0);
+}
+
+print "RESULTS:\n\n";
+
+my $mean;
+my $tm;
+my $std;
+
+$mean = $stat_time->mean();
+$tm   = $stat_time->trimmed_mean(.25); 
+$std  = $stat_time->standard_deviation();
+$std = 0 if !defined($std);
+print "Time (Mean: $mean, Trimmed mean: $tm, Std: $std)\n";
+
+$mean = $stat_nodes->mean();
+$tm   = $stat_nodes->trimmed_mean(.25); 
+$std  = $stat_nodes->standard_deviation();
+$std = 0 if !defined($std);
+print "Nodes (Mean: $mean, Trimmed mean: $tm, Std: $std)\n";
+
+$mean = $stat_speed->mean();
+$tm   = $stat_speed->trimmed_mean(.25); 
+$std  = $stat_speed->standard_deviation();
+$std = 0 if !defined($std);
+print "Speed (Mean: $mean, Trimmed mean: $tm, Std: $std)\n";

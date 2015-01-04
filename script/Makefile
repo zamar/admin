@@ -1,6 +1,6 @@
 BINDIR = /usr/local/bin
 
-BASHSCRIPTS = build jk-mount-usb mychess jk-umount-usb ogg2mp3 jk-backup-work jk-start-vnc jk-stop-vnc
+BASHSCRIPTS = build jk-mount-usb mychess jk-umount-usb ogg2mp3 jk-backup-work jk-start-vnc jk-stop-vnc jk-git-add jk-git-merge mybench
 
 default:
 	true

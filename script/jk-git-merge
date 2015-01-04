@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------
+# USAGE:
+#   jk-git-merge [git_username] [git_branch]
+#
+# DESCRIPTION:
+#   FIXME
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+#       INIT
+#--------------------------------------------------------------------------
+
+set -e # Stop immediately if a command fails
+
+#--------------------------------------------------------------------------
+#       GLOBAL CONSTANTS
+#--------------------------------------------------------------------------
+
+MODULE_NAME=jk-git-merge
+
+#--------------------------------------------------------------------------
+#       PRIVATE FUNCTIONS
+#--------------------------------------------------------------------------
+
+show_usage() {
+
+    echo ""
+    echo "$MODULE_NAME git_username git_branch"
+    echo ""
+    echo "git_username                 Git username [Added by jk-git-add]"
+    echo "git_branch                   Git branch [In remote repo to be merged to master]"
+    echo ""
+
+    exit 1
+}
+
+die() {
+    echo "$1" 1>&2
+    exit 1
+}
+
+#--------------------------------------------------------------------------
+#       MAIN CODE
+#--------------------------------------------------------------------------
+
+# STEP. Parse command line.
+
+if [ -z $2 ] || [ $1 == "-?" ] || [ $1 == "-h" ] || [ $1 == "--help" ] ; then
+    show_usage
+fi
+
+USER="$1"
+BRANCH="$2"
+
+echo "Moving to master..."
+git checkout master
+
+echo "Deleting old tmp branch..."
+git branch -D tmp 2>/dev/null || true
+
+echo "Checking out temporary branch..."
+git checkout -b tmp
+
+echo "Pulling branch $USER/$BRANCH..."
+git pull --no-edit $USER $BRANCH
+
+echo "Moving back to master..."
+git checkout master
+
+echo "Squashing branch into single commit..."
+git merge --squash -e tmp
+
+echo "To finalise, type:"
+echo "git commit --author $USER"
