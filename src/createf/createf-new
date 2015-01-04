@@ -1,0 +1,72 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------
+# USAGE:
+#   createf-new filename type
+#
+# DESCRIPTION:
+#   Creates file with specified skeleton
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+#       INIT
+#--------------------------------------------------------------------------
+
+set -e # Stop immediately if a command fails
+
+#--------------------------------------------------------------------------
+#       GLOBAL CONSTANTS
+#--------------------------------------------------------------------------
+
+MODULE_NAME=createf-new
+CONFDIR=/etc/createf
+
+#--------------------------------------------------------------------------
+#       PRIVATE FUNCTIONS
+#--------------------------------------------------------------------------
+
+show_usage() {
+
+    echo ""
+    echo "$MODULE_NAME filename type"
+    echo ""
+    echo "filename               File to be created"
+    echo "type                   File type"
+    echo ""
+
+    exit 1
+}
+
+die() {
+    echo "$1" 1>&2
+    exit 1
+}
+
+#--------------------------------------------------------------------------
+#       MAIN CODE
+#--------------------------------------------------------------------------
+
+# STEP. Parse command line.
+
+if [ -z $2 ] || [ $1 == "-?" ] || [ $1 == "-h" ] || [ $1 == "--help" ] ; then
+    show_usage
+fi
+
+FILENAME="$1"
+FILETYPE="$2"
+
+# STEP. Sanity check command
+
+SOURCE="$CONFDIR/$FILETYPE.skel"
+
+if [ ! -r "$SOURCE" ]; then
+   die "File '$SOURCE' does not exist or is not readable."
+fi
+
+if [ -f "$FILENAME" ]; then
+   die "File '$FILENAME' already exists!"
+fi
+
+# STEP. Copy template over
+
+cp "$SOURCE" "$FILENAME"

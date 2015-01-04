@@ -1,0 +1,4 @@
+DIRS="/var/lib/myprogs /home/zamar/work"
+METHOD="sync"
+TARGETHOST="zamar@localhost"
+TARGETDIR="/usbdisk/backup/mirror"

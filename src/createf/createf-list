@@ -1,0 +1,59 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------
+# USAGE:
+#   createf-list
+#
+# DESCRIPTION:
+#   Print a list of all available file types for createf tool.
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+#       INIT
+#--------------------------------------------------------------------------
+
+set -e # Stop immediately if a command fails
+
+#--------------------------------------------------------------------------
+#       GLOBAL CONSTANTS
+#--------------------------------------------------------------------------
+
+MODULE_NAME=createf-list
+CONFDIR=/etc/createf
+
+#--------------------------------------------------------------------------
+#       PRIVATE FUNCTIONS
+#--------------------------------------------------------------------------
+
+show_usage() {
+
+    echo ""
+    echo "$MODULE_NAME"
+    echo ""
+    echo "This script takes no command line arguments"
+    echo ""
+
+    exit 1
+}
+
+die() {
+    echo "$1" 1>&2
+    exit 1
+}
+
+#--------------------------------------------------------------------------
+#       MAIN CODE
+#--------------------------------------------------------------------------
+
+# STEP. Parse command line.
+
+if [ ! -z $1 ]; then
+    show_usage
+fi
+
+# STEP. Print a list of supported types
+
+find "$CONFDIR" -name "*.skel" | while read filename
+do
+    echo `basename "$filename" | rev | cut -d'.' -f2- | rev`
+done

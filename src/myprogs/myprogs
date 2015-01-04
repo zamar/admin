@@ -1,0 +1,498 @@
+#!/usr/bin/perl
+
+#--------------------------------------------------------------------------
+# USAGE:
+#   myprogs action action_parameters
+#
+# DESCRIPTION:
+#   Tool to keep track of interesting debian packages.
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+#       LIBRARIES
+#--------------------------------------------------------------------------
+use strict;
+use warnings;
+use IO::LockedFile;
+use Getopt::Long;
+use Text::CSV;
+use AptPkg::Config '$_config';
+use AptPkg::System '$_system';
+use AptPkg::Cache;
+use Data::Dumper;
+
+autoflush STDOUT 1;
+autoflush STDERR 1;
+
+#--------------------------------------------------------------------------
+#       GLOBAL CONSTANTS
+#--------------------------------------------------------------------------
+my $MODULE_NAME = 'myprogs';
+
+my $CONFIG_DIR    = '/var/lib/myprogs';
+my $PACKAGE_FILE  = "myprogs.package";
+my $CATEGORY_FILE = "myprogs.category";
+my $LOCK_FILE = ".lock";
+
+my $CATEGORY_NAME_IDX = 0;
+my $PACKAGE_NAME_IDX = 0;
+my $PACKAGE_STATUS_IDX = 1;
+my $PACKAGE_CATEGORY_IDX = 2;
+
+#--------------------------------------------------------------------------
+#       GETOPT VARIABLES
+#--------------------------------------------------------------------------
+use vars qw($opt_status $opt_category $opt_nosync);
+
+#--------------------------------------------------------------------------
+#       SUBROUTINES
+#--------------------------------------------------------------------------
+
+#**************************************************************************
+# NAME:
+#   show_usage
+#
+# DESCRIPTION:
+#   Prints usage details
+#
+# PARAMETERS:
+#   None
+#
+# RETURNS:
+#   Never 
+#**************************************************************************
+sub show_usage
+{
+    print STDERR <<EOS;
+
+$MODULE_NAME init
+$MODULE_NAME add-category <category>
+$MODULE_NAME rem-category <category>
+$MODULE_NAME rename-category <category> <new-category>
+$MODULE_NAME print-categories
+$MODULE_NAME new <package> <status> <category> [--nosync]
+$MODULE_NAME set-status <package> <status> [--nosync]
+$MODULE_NAME set-category <package> <category>
+$MODULE_NAME forget <package>
+$MODULE_NAME print [--status <status_list>] [--category <category_list>]
+$MODULE_NAME check
+$MODULE_NAME sync
+
+    <category>                 Name of category
+    <package>                  Debian package
+    <status>                   One of the following: prospect, trial, active, remove
+    <status_list>              Comma-separated list of statuses
+    <category_list>            Comma-separated list of categories
+    --nosync                   Do not synchronize changes with apt
+
+EOS
+    exit(1)
+}
+
+#**************************************************************************
+# NAME:
+#   system_or_die
+#
+# DESCRIPTION:
+#   Execute given command with system().
+#   If command exits with non-zero status, program is terminated.
+#
+# PARAMETERS:
+#   $cmd (string)     Command to be executed
+#
+# RETURNS:
+#   Nothing. Dies on error.
+#**************************************************************************
+sub system_or_die
+{
+    my ($cmd) = (@_);
+    system($cmd) == 0 || die "Execution of the following command failed: '$cmd'";
+}
+
+#--------------------------------------------------------------------------
+#       MAIN CODE
+#--------------------------------------------------------------------------
+
+# STEP. Record command
+
+my $command = join(' ', @ARGV);
+$command =~ s/'/\\'/;
+
+# STEP. Get action from command line
+
+show_usage if (!defined($ARGV[0]) || $ARGV[0] eq '-?' || $ARGV[0] eq '-h' || $ARGV[0] eq '--help');
+
+my $action = shift;
+
+show_usage unless $action =~ /^(init|add-category|rem-category|rename-category|print-categories|new|set-status|set-category|forget|print|check|sync)$/;
+
+# STEP. Move into correct directory
+
+if ($action eq 'init')
+{
+    system_or_die("mkdir -p $CONFIG_DIR"); 
+}
+
+chdir $CONFIG_DIR || die "Failed to change directory to: $CONFIG_DIR";
+
+# STEP. Lock (except read-only actions)
+
+if ($action !~ /^(print-categories|print|check)$/)
+{
+    my $lock = new IO::LockedFile({'block' => 0}, ">$LOCK_FILE");
+    die "Failed to lock directory '$CONFIG_DIR'. Cannot create a lock-file '$LOCK_FILE'!" if !defined($lock);
+}
+
+# STEP. Handle init action
+
+if ($action eq 'init') 
+{
+    system_or_die("touch $CATEGORY_FILE && touch $PACKAGE_FILE");
+    system_or_die("test -d '.git' || (git init -q && git add $CATEGORY_FILE $PACKAGE_FILE && git commit -q -m '$MODULE_NAME $command')");
+
+    exit(0);
+}
+
+# STEP. Prepare git (except read-only actions)
+
+if ($action !~ /^(print-categories|print|check)$/)
+{
+    system_or_die("git reset -q --hard && git checkout -q master");
+}
+
+# STEP. Check that "database" files (really CSV-files) exist
+
+die "File '$CATEGORY_FILE' does not exist or is not accessible!" unless (-r $CATEGORY_FILE);
+die "File '$PACKAGE_FILE' does not exist or is not accessible!"  unless (-r $PACKAGE_FILE);
+
+# STEP. Read in "database" file.
+my @categories;
+my @packages;
+
+my %categoryMap;
+my %packageMap;
+
+my $csv = Text::CSV->new({binary => 1});
+
+open (FILE, "<$CATEGORY_FILE") || die "Failed to open file '$CATEGORY_FILE'!"; 
+@categories = @{$csv->getline_all(\*FILE)};
+close FILE;
+
+open (FILE, "<$PACKAGE_FILE" ) || die "Failed to open file '$PACKAGE_FILE'!"; 
+@packages = @{$csv->getline_all(\*FILE)};
+close FILE;
+
+# STEP. Validate data and build maps.
+
+foreach my $category (@categories)
+{
+    my $name = @{$category}[$CATEGORY_NAME_IDX];
+
+    die "Corrupted data! Illegal category name: '$name'" unless ($name =~ /^(\w|\+|\-|\.)+$/);
+    die "Corrupted data! Duplicate category name: '$name'" if defined($categoryMap{$name});
+
+    $categoryMap{$name} = $category;
+}
+
+foreach my $package (@packages)
+{
+    my $name = @{$package}[$PACKAGE_NAME_IDX];
+    my $status = @{$package}[$PACKAGE_STATUS_IDX];
+    my $category = @{$package}[$PACKAGE_CATEGORY_IDX];
+
+    die "Corrupted data! Illegal package name: '$name'" unless ($name =~ /^(\w|\+|\-|\.|\:)+$/);
+    die "Corrupted data! Illegal package status: '$status'" unless ($status =~ /^(prospect|trial|active|remove)$/);
+    die "Corrupted data! Illegal package category: '$category'" unless ($category =~ /^(\w|\+|\-|\.)+$/);
+    die "Corrupted data! Duplicate package name: '$name'" if defined($packageMap{$name});
+    die "Corrupted data! Bad package category reference: '$category'" unless defined($categoryMap{$category});
+
+    $packageMap{$name} = $package;
+}
+
+# STEP. Print actions
+if ($action eq 'print-categories')
+{
+    foreach my $category (@categories)
+    {
+        print @{$category}[$CATEGORY_NAME_IDX] . "\n";
+    }
+
+    exit(0);
+}
+
+if ($action eq 'print')
+{
+    show_usage if !GetOptions("status=s", "category=s"); 
+
+    my $statusStr =   (!defined($opt_status) ? "trial,active" : $opt_status eq 'all' ? 'prospect,trial,active,remove' : $opt_status);
+    my $categoryStr = (!defined($opt_category) ? join(',', sort keys %categoryMap) : $opt_category);
+
+    my @statusList = split(',', $statusStr);
+    my @categoryList = split(',', $categoryStr);
+
+    foreach my $status (@statusList)
+    {
+        die "Illegal status: '$status'" unless ($status =~ /^(prospect|trial|active|remove)$/);
+    }
+
+    foreach my $category (@categoryList)
+    {
+        die "Illegal category: '$category'" unless defined($categoryMap{$category});
+    }
+
+    foreach my $category (@categoryList)
+    {
+        print "$category\n";
+
+        foreach my $package (@packages)
+        {
+            my $packageName =  @{$package}[$PACKAGE_NAME_IDX];
+            my $packageStatus = @{$package}[$PACKAGE_STATUS_IDX];
+            my $packageCategory = @{$package}[$PACKAGE_CATEGORY_IDX];
+
+            next if ($packageCategory ne $category);
+            next unless ($packageStatus ~~ @statusList);
+
+            print "    $packageName ($packageStatus)\n";
+        }
+    }
+
+    exit(0);
+}
+
+# STEP. Category actions
+
+if ($action eq 'add-category')
+{
+    show_usage if !defined($ARGV[0]);
+    my $name = $ARGV[0];
+    die "Name '$name' is not a valid category name." unless ($name =~ /^(\w|\+|\-|\.)+$/);
+    die "Category with name '$name' already exists!" if defined($categoryMap{$name});
+    push(@categories, [$name]);
+
+    goto write_out;
+}
+
+if ($action eq 'rem-category')
+{
+    show_usage if !defined($ARGV[0]);
+    my $name = $ARGV[0];
+    die "Category with name '$name' does not exist!" unless defined($categoryMap{$name});
+    
+    foreach my $package (@packages) 
+    {
+        if (@{$package}[$PACKAGE_CATEGORY_IDX] eq $name) {
+            die "Cannot remove category '$name', because package '@{$package}[$PACKAGE_NAME_IDX]' is linked to it";
+        }
+    } 
+
+    @categories = grep { @{$_}[$CATEGORY_NAME_IDX] ne $name } @categories;
+
+    goto write_out;
+}
+
+if ($action eq 'rename-category')
+{
+    show_usage if !defined($ARGV[1]);
+    my $oldName = $ARGV[0];
+    my $newName = $ARGV[1];
+
+    die "Category with name '$oldName' does not exist!" unless defined($categoryMap{$oldName});
+    die "Name '$newName' is not a valid category name." unless ($newName =~ /^(\w|\+|\-|\.)+$/);
+    die "Category with name '$newName' already exists!" if defined($categoryMap{$newName});
+    die "Old name '$oldName' and new name '$newName' are same!" if ($oldName eq $newName);
+
+    foreach my $category (@categories)
+    {
+        @{$category}[$CATEGORY_NAME_IDX] = $newName if (@{$category}[$CATEGORY_NAME_IDX] eq $oldName);
+    }
+
+    foreach my $package (@packages)
+    {
+        @{$package}[$PACKAGE_CATEGORY_IDX] = $newName if (@{$package}[$PACKAGE_CATEGORY_IDX] eq $oldName);
+    }
+
+    goto write_out;
+}
+
+# STEP. Read apt cache
+
+my ($cache, $policy);
+
+$_config->init;
+$_system = $_config->system;
+$_config->{quiet} = 2;
+$cache = AptPkg::Cache->new;
+$policy = $cache->policy;
+
+# STEP. check & sync actions.
+
+if ($action =~ /^(check|sync)/)
+{
+    my @notFound;
+    my @notInstalled;
+
+    foreach my $package (@packages)
+    {
+        my $name = @{$package}[$PACKAGE_NAME_IDX];
+        my $status = @{$package}[$PACKAGE_STATUS_IDX];
+
+        my $aptPack = $cache->{$name};
+
+        if (!$aptPack) {
+            warn "Package '$name' not found in APT's cache. Default sync action: Forget '$name'.";
+            push(@notFound, $name); 
+        }
+        elsif ($status =~ /^(trial|active)$/ && $aptPack->{'SelectedState'} ne 'Install') {
+            warn "Package '$name' not currently installed. Default sync action: Install '$name'.";
+            push(@notInstalled, $name); 
+        }
+    }
+
+    exit(0) if ($action eq 'check');
+
+    my $notFoundStr = join(' ', @notFound);
+    my $notInstalledStr = join(' ', @notInstalled);
+
+    if ($notFoundStr ne '')
+    {
+        print "Forgetting following packages: $notFoundStr\n";
+        foreach my $name (@notFound)
+        { 
+            @packages = grep { @{$_}[$PACKAGE_NAME_IDX] ne $name } @packages;
+        }
+    }
+
+    if ($notInstalledStr ne '')
+    {
+        print "Asking apt to install following packages: $notInstalledStr\n";
+        system_or_die("apt-get install $notInstalledStr");
+    }    
+
+    goto write_out;
+}
+
+# STEP. Handle package actions.
+show_usage if !GetOptions("nosync");
+my $nosync = (defined($opt_nosync) ? $opt_nosync : 0);
+
+if ($action eq 'new')
+{
+    show_usage if !defined($ARGV[2]);
+
+    my $name = $ARGV[0];
+    my $status = $ARGV[1];
+    my $category = $ARGV[2];
+
+    die "Invalid package name: '$name'" unless ($name =~ /^(\w|\+|\-|\.|\:)+$/);
+    die "Package '$name' already exists!" if defined($packageMap{$name});
+    die "Invalid package status: '$status'" unless ($status =~ /^(prospect|trial|active|remove)$/);
+    die "Category '$category' does not exist!" unless defined($categoryMap{$category});
+  
+    if (!$nosync)
+    {
+        my $aptPack = $cache->{$name};
+
+        die "Package '$name' not found in APT's cache.." if (!$aptPack); 
+        
+        if ($status =~ /^(trial|active)$/ && $aptPack->{'SelectedState'} ne 'Install') 
+        {
+            print "Asking apt to install package: $name\n";
+            system_or_die("apt-get install $name"); 
+        }
+        elsif ($status eq 'remove' && $aptPack->{'SelectedState'} eq 'Install')
+        {
+            print "Asking apt to remove package: $name\n";
+            system_or_die("apt-get remove $name");
+        }
+    }
+    push(@packages, [$name, $status, $category]);
+
+    goto write_out;
+}
+
+if ($action eq 'forget')
+{
+    show_usage if !defined($ARGV[0]);
+    my $name = $ARGV[0];
+    die "Package '$name' does not exist!" unless defined($packageMap{$name});
+    @packages = grep { @{$_}[$PACKAGE_NAME_IDX] ne $name } @packages;
+
+    goto write_out;
+}
+
+if ($action eq 'set-status')
+{
+    show_usage if !defined($ARGV[1]);
+
+    my $name = $ARGV[0];
+    my $status = $ARGV[1];
+    
+    die "Package '$name' does not exist!" unless defined($packageMap{$name});
+    die "Invalid package status: '$status'" unless ($status =~ /^(prospect|trial|active|remove)$/);
+
+    if (!$nosync)
+    {
+        my $aptPack = $cache->{$name};
+        
+        die "Package '$name' not found in APT's cache.." if (!$aptPack);
+        
+        if ($status =~ /^(trial|active)$/ && $aptPack->{'SelectedState'} ne 'Install')
+        {
+            print "Asking apt to install package: $name\n";
+            system_or_die("apt-get install $name");
+        }
+        elsif ($status eq 'remove' && $aptPack->{'SelectedState'} eq 'Install')
+        {
+            print "Asking apt to remove package: $name\n";
+            system_or_die("apt-get remove $name");
+        }
+    }
+
+    @{$packageMap{$name}}[$PACKAGE_STATUS_IDX] = $status;
+    goto write_out;
+}
+
+if ($action eq 'set-category')
+{
+    show_usage if !defined($ARGV[1]);
+    
+    my $name = $ARGV[0];
+    my $category = $ARGV[1];
+
+    die "Package '$name' does not exist!" unless defined($packageMap{$name});
+    die "Category '$category' does not exist!" unless defined($categoryMap{$category});
+
+    @{$packageMap{$name}}[$PACKAGE_CATEGORY_IDX] = $category;
+    goto write_out;
+}
+
+# STEP. Write data back to the disk.
+
+write_out:
+
+@categories = sort { @{$a}[$CATEGORY_NAME_IDX] ge @{$b}[$CATEGORY_NAME_IDX] } @categories;
+@packages   = sort { @{$a}[$PACKAGE_NAME_IDX]  ge @{$b}[$PACKAGE_NAME_IDX]  } @packages;
+
+open(FILE, ">$CATEGORY_FILE.new") || die "Failed to open file '$CATEGORY_FILE.new' for writing.";
+foreach my $category (@categories) 
+{
+    $csv->combine(@$category) || die "Internal data error!";
+    print FILE $csv->string . "\n";
+}
+close(FILE);
+
+open(FILE, ">$PACKAGE_FILE.new") || die "Failed to open file '$PACKAGE_FILE.new' for writing.";
+foreach my $package (@packages) 
+{
+    $csv->combine(@$package) || die "Internal data error!";
+    print FILE $csv->string . "\n";
+}
+close(FILE);
+
+system_or_die("mv $CATEGORY_FILE.new $CATEGORY_FILE");
+system_or_die("mv $PACKAGE_FILE.new $PACKAGE_FILE");
+
+system_or_die("test -z \"`git diff`\" || git commit -a -q -m '$MODULE_NAME $command'"); 
+
+exit 0;

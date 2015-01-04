@@ -1,0 +1,5 @@
+DIRS="/var/lib/myprogs /home/zamar/work"
+METHOD="snapshot"
+TARGETHOST="zamar@localhost"
+TARGETDIR="/usbdisk/backup/snapshot"
+TARGETFILEPREFIX="meripeto_work_snapshot_"

@@ -1,0 +1,44 @@
+SECTION. Keeping debian system clean
+====================================
+
+- Remove obsolete libs: 'deborphan' and 'apt-get remove `deborphan`'
+- Purge obsolete packages: 'dpkg --get-selections | grep 'deinstall$' and 
+                           'dpkg --purge `dpkg --get-selections | grep 'deinstall$' | cut -f1`'
+
+- Check that myprogs repository is in sync: 'sudo myprogs check'
+
+- Check for obsolete packages with: 'aptitude search ?obsolete'
+
+SECTION. Backups
+================
+
+SCOPE:
+
+- The following Directories to be backed up:
+/home/zamar/work
+/var/lib/myprogs
+/data/pics
+
+SETUP:
+
+- Create target directory in another server or usbdisk
+- If using another server, setup key authentication between servers (keys in ~/.ssh)
+- Install sshbackup from ~/work/src/sshbackup
+- Edit and install config from ~/work/config/sshbackup
+
+EXECUTION:
+
+- /data/pics : Once a year (01/01/20xx)
+
+mount-usb
+sshbackup /etc/sshbackup/meripeto_pics_snapshot.backup
+sshbackup /etc/sshbackup/meripeto_pics_sync.backup
+umount-usb
+
+- /home/zamar/work, /var/lib/myprogs : After significant development or changes have been made since last backup.
+
+mount-usb
+sshbackup /etc/sshbackup/meripeto_work_snapshot.backup
+sshbackup /etc/sshbackup/meripeto_work_sync.backup
+umount-usb
+

@@ -1,0 +1,15 @@
+BINDIR = /usr/local/bin
+CONFDIR = /etc/FIXME
+
+BASHSCRIPTS =
+PERLSCRIPTS = 
+CONFFILES =
+
+default:
+	perl -c $(PERLSCRIPTS)
+
+install:
+	mkdir -p -m 755 $(BINDIR)
+	mkdir -p -m 755 ${CONFDIR}
+	cp $(BASHSCRIPTS) $(PERLSCRIPTS) $(BINDIR)
+	cp $(CONFFILES) $(CONFDIR)

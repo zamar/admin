@@ -1,0 +1,11 @@
+BINDIR = /usr/local/bin
+
+BASHSCRIPTS = build jk-mount-usb mychess jk-umount-usb ogg2mp3 jk-backup-work jk-start-vnc jk-stop-vnc
+
+default:
+	true
+
+
+install:
+	mkdir -p -m 755 $(BINDIR)
+	cp $(BASHSCRIPTS) $(BINDIR)

@@ -1,0 +1,3 @@
+As root:
+- Run: apt-get install git libtext-csv-perl libapt-pkg-perl libio-lockedfile-perl
+- Run: make install

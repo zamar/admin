@@ -1,0 +1,6 @@
+Possible enhancements:
+
+* Action rename-category
+* Action rename-package
+* Possibility to enable, disable category
+* Compare with 'apt-mark showmanual'

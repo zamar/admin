@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#--------------------------------------------------------------------------
+# USAGE:
+#   sshbackup method
+#
+# DESCRIPTION:
+#   Backups important files to defined targethost
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+#       INIT
+#--------------------------------------------------------------------------
+
+set -e # Stop immediately if a command fails
+
+#--------------------------------------------------------------------------
+#       GLOBAL CONSTANTS
+#--------------------------------------------------------------------------
+
+MODULE_NAME=sshbackup
+
+#--------------------------------------------------------------------------
+#       PRIVATE FUNCTIONS
+#--------------------------------------------------------------------------
+
+show_usage() {
+
+    echo ""
+    echo "$MODULE_NAME setupfile"
+    echo ""
+    echo "setupfile              File containing backup configuration"
+    echo ""
+
+    exit 1
+}
+
+die() {
+    echo "$1" 1>&2
+    exit 1
+}
+
+#--------------------------------------------------------------------------
+#       MAIN CODE
+#--------------------------------------------------------------------------
+
+# STEP. Parse command line.
+
+if [ -z "$1" ] || [ "$1" == "-?" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
+    show_usage
+fi
+
+SETUPFILE="$1"
+
+# STEP. Read in configuration file
+
+source "$SETUPFILE"
+
+# STEP. Check configuration sanity
+
+if [ -z "$METHOD" ] || [ -z "$DIRS" ] || [ -z "$TARGETHOST" ] || [ -z "$TARGETDIR" ] ; then
+    die "METHOD, DIRS, TARGETHOST, TARGETDIR are mandatory parameters in configration file!"
+fi
+
+if [ "$METHOD" == "snapshot" ] && [ -z "$TARGETFILEPREFIX" ] ; then
+    die "TARGETFILEPREFIX is mandatory parameter for 'snapshot' method."
+fi
+
+# STEP. Do the backup
+
+if [ "$METHOD" == "sync" ] ; then
+    for dir in $DIRS
+    do
+        rsync -azv --delete $dir "$TARGETHOST:$TARGETDIR"
+    done
+
+elif [ "$METHOD" == "snapshot" ] ; then
+    tar --ignore-failed-read -c $DIRS | ssh $TARGETHOST cat \>$TARGETDIR/$TARGETFILEPREFIX`date +%Y%m%d`.tar
+
+else
+    die "Unknown method: $METHOD"
+fi

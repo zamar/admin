@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# This program is free software, licensed under the GNU GPL, >=2.0.
+# This software comes with absolutely NO WARRANTY. Use at your own risk!
+#
+# 2007/02/24  v0.42  (Rainer Jochem)
+#
+
+# As a default, store the mp3 files in the same directory as the ogg files
+DIRECTORY="./"
+
+# Default bitrate
+RATE=192
+
+# Directory where the script was launched
+MYPWD=`pwd`
+
+
+# Required programs
+OGGINFO=`which ogginfo`
+OGGDEC=`which oggdec`
+LAME=`which lame`
+
+if [ "$OGGINFO" == "" -o "$OGGDEC" == "" -o "$LAME" == "" ] ; then
+    echo -e "\nERROR: ogginfo, oggdec and lame are required!\n"
+    exit 0
+fi
+
+
+# Usage information
+displayhelp () {
+    echo -e "\nUsage: `basename $0` [options] input_files_or_directories ...\n"
+    echo -e "OPTIONS:\n"
+    echo " -h help ;)"
+    echo " -d target directory (directory structure of input_directory is preserved)"
+    echo -e " -r target bitrate\n"
+    exit 0
+}
+
+
+# If we are called with an insufficient amount of arguments
+if [ "$#" == 0 ] ; then
+    displayhelp
+fi
+
+
+# Read and set the parameters
+READOPT=0                     
+while [ $READOPT -eq 0 ] ; do     
+  case $1 in 
+      -h) displayhelp
+	  shift ;;
+      -d) DIRECTORY=$2 ; shift
+          shift ;; 
+      -r) RATE=$2 ; shift 
+          shift ;; 
+       *) if `echo $1 | grep -s '^-'` ; then # Parm. beginnt mit '-' 
+	  echo "unknown option $1"
+	  shift
+	  else
+	  READOPT=1 
+	  fi
+  esac
+done
+
+
+# the remaining parameters - input_file_or_directory
+FILES=$* 
+
+
+# The recoding: recode source_file_with_path dest_dir
+recode () {
+    # get the comments of the source file 
+    ARTIST=`$OGGINFO $1 | grep artist | cut -f2 -d\=`
+    TITLE=`$OGGINFO $1 | grep title | cut -f2 -d\=`
+    ALBUM=`$OGGINFO $1 | grep album | cut -f2 -d\=`
+    YEAR=`$OGGINFO $1 | grep date | cut -f2 -d\=`
+    GENRE=`$OGGINFO $1 | grep genre | cut -f2 -d\=`
+    FILENAME=`basename $1 .ogg`
+    $OGGDEC -o - $1 | $LAME -S -m s -h -b $RATE \
+	--add-id3v2 --tt "$TITLE" --ta "$ARTIST" --tl "$ALBUM" --ty "$YEAR" --tg "$GENRE" - $2/$FILENAME.mp3
+}
+
+
+# In case to recode an entire directory with its subdirectories
+if [ -d $FILES ] ; then
+    # recurse through the (sub)directories
+    for i in `find $FILES -type d` 
+      do
+      # if no destination directory is provided, put all mp3s in the same place
+      # as the ogg files and don't try to create any directories
+      if [ "$DIRECTORY" != "./" ] ;then
+	  mkdir -p $DIRECTORY/$i
+      fi
+      
+      # for every found item
+      for j in $MYPWD/$i/*.ogg
+	do
+	# test if it is a readable file and recode
+	if [ -r $j ] ; then 
+	    recode $j $DIRECTORY/$i
+	fi
+      done
+    done
+fi
+
+
+# to recode some single files
+if [ -f $FILES ] ; then
+    recode $FILES $DIRECTORY
+fi

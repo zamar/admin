@@ -1,0 +1,260 @@
+Debian Installation
+===================
+===================
+
+STEP. Preparation
+=================
+
+- Download small Debian ISO-image.
+- Burn it to CD OR
+  Open VMWare Virtual Machine and choose "Create New Virtual Machine". Pick ISO Image.
+
+STEP. Execute installation
+==========================
+
+- Install only base system
+
+STEP. Add i386 multiarch support (AMD64 machines only)
+======================================================
+
+dpkg --add-architecture i386
+
+STEP. Prepare apt
+=================
+
+- Edit /etc/apt/sources.list, it should look like following:
+
+deb http://ftp.ie.debian.org/debian/ wheezy main contrib non-free
+deb-src http://ftp.ie.debian.org/debian/ wheezy main contrib non-free
+
+deb http://security.debian.org/ wheezy/updates main contrib non-free
+deb-src http://security.debian.org/ wheezy/updates main contrib non-free
+
+deb http://ftp.ie.debian.org/debian/ wheezy-updates main contrib non-free
+deb-src http://ftp.ie.debian.org/debian/ wheezy-updates main contrib non-free
+
+deb http://www.deb-multimedia.org wheezy main non-free
+
+- Edit /etc/apt/apt.conf to increase default cache-size
+
+APT::Cache-Limit "1000000000";
+
+STEP. apt update && upgrade
+==========================
+
+apt-get update
+apt-get upgrade
+apt-get dist-upgrade
+
+STEP. Install important core software
+=====================================
+
+apt-get install sudo vim openssh-server firehol
+
+STEP. Give primary user unlimited sudo access
+=============================================
+
+adduser zamar sudo
+
+- Edit file /etc/sudoers according to the following diff:
+< %sudo ALL=(ALL:ALL) ALL
+---
+> %sudo ALL=NOPASSWD: ALL
+
+STEP. Change setting for vim
+============================
+
+- Edit /etc/vim/vimrc according to the following diff:
+
+< "syntax on
+---
+> syntax on
+
+< "set showcmd          " Show (partial) command in status line.
+< "set showmatch                " Show matching brackets.
+< "set ignorecase               " Do case insensitive matching
+< "set smartcase                " Do smart case matching
+< "set incsearch                " Incremental search
+< "set autowrite                " Automatically save before commands like :next and :make
+---
+> set showcmd           " Show (partial) command in status line.
+> set showmatch         " Show matching brackets.
+> set ignorecase                " Do case insensitive matching
+> set smartcase         " Do smart case matching
+> set incsearch         " Incremental search
+> set autowrite         " Automatically save before commands like :next and :make
+
+> set shiftwidth=4
+> set tabstop=4
+> set expandtab
+> set ignorecase
+> set bg=dark
+
+STEP. Configure && restart firewall
+===================================
+
+- Edit /etc/firehol/firehol.conf. It should look like following:
+
+version 5
+
+interface eth0 home
+  policy reject
+  protection strong 4/sec
+  server ssh accept
+  client all accept
+
+- After editing configuration, restart firewall:
+
+/etc/init.d/firehol restart
+
+STEP. Disable CTRL+ALT+DEL
+==========================
+
+- Edit /etc/inittab according to the following diff:
+
+< ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
+---
+> ca:12345:ctrlaltdel:/bin/echo "CTRL+ALT+DEL is disabled"
+
+STEP. Set static IP-address
+===========================
+
+- Configure router (192.168.1.1) to always give same IP-address/MAC and
+- Use simple /etc/network/interfaces definition:
+
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth0
+iface eth0 inet dhcp
+
+OR
+
+- Configure /etc/network/interfaces:
+
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto eth0
+iface eth0 inet static
+  address 192.168.1.205
+  netmask 255.255.255.0
+  gateway 192.168.0.254
+#  dns-nameservers 192.168.0.254
+
+STEP. Update list of known hosts
+================================
+
+Example diff for /etc/hosts
+
+> 192.168.1.100 meripeto
+
+STEP. Setup deb-multimedia repository
+=====================================
+
+apt-get install deb-multimedia-keyring
+apt-get update
+
+STEP. Install mplayer and set hardware specific configuration
+=============================================================
+
+apt-get install mplayer
+
+Example diff for /etc/mplayer/mplayer.conf
+
+> fs=yes
+> vm=no
+> zoom=no
+> monitoraspect=4:3
+> ontop=yes
+> framedrop = yes
+> cache = 8192
+> cache-min = 15.0
+> slang = en #fi
+> alang = en
+
+STEP. For virtual machine, remove package which keeps sending RAID status notices every two hours
+=================================================================================================
+
+apt-get remove mpt-status
+
+STEP. Setup cron to automatically download package updates every morning
+========================================================================
+
+crontab -e (as root)
+
+Insert the following line:
+
+22 6 * * * apt-get update && apt-get --download-only --assume-yes dist-upgrade
+
+STEP. Bring in Personal programs and scripts
+============================================
+
+- Bring in directories ~/work and /var/lib/myprogs from archives.
+
+STEP. Install myprogs and use it to install remaining packages
+==============================================================
+
+- Install myprogs from ~/work/src/myprogs
+
+- Use 'myprogs print', 'myprogs check' and 'myprogs sync' to install all wanted packages
+
+STEP. Personalize X
+===================
+
+- To get the right look for xterm, create file '~/.Xdefaults' with the following content:
+
+xterm*width: 111
+xterm*height: 40
+xterm*background: Black
+xterm*foreground: Wheat
+xterm*cursorColor: Orchid
+xterm*reverseVideo: false
+xterm*reverseWrap: true
+xterm*font: fixed
+xterm*fullCursor: true
+xterm*scrollTtyOutput: off
+xterm*scrollKey: on
+xterm*titleBar: false
+
+- To always start fluxbox when executing 'startx', edit/create file '~/.xinitrc' to have the following content:
+
+#!/bin/sh
+exec startfluxbox
+
+STEP. Install VNC-Server
+========================
+
+- Install:
+sudo apt-get install vnc4server
+
+- Configuring a new user:
+vnc4server 
+
+- To start:
+vncserver :1 -geometry 1440x900
+
+- To stop:
+vncserver -kill :1
+
+- To safely connect:
+Start putty connection with tunneling enabled
+Use vncviewer to connect at localhost:5901
+
+STEP. Set up Alternatives for GCC
+=================================
+
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.7 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.7
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.5 60 --slave /usr/bin/clang++ clang++ /usr/bin/clang++-3.5 --slave /usr/bin/llvm-profdata llvm-profdata /usr/bin/llvm-profdata-3.5
+
+sudo update-alternatives --config clang
+sudo update-alternatives --config gcc
+
+STEP. Install personal scripts
+==============================
+
+- Install necessary stuff from ~/work directory structure.
