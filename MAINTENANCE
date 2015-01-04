@@ -9,6 +9,11 @@ SECTION. Keeping debian system clean
 
 - Check for obsolete packages with: 'aptitude search ?obsolete'
 
+SECTION. Keeping admin/ directory up to date
+============================================
+
+Update src/ script/ config/ subdirectories with latest software, scripts and config.
+
 SECTION. Backups
 ================
 
