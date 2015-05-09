@@ -231,6 +231,20 @@ vncserver -kill :1
 Start putty connection with tunneling enabled
 Use vncviewer to connect at localhost:5901
 
+STEP. Configure USB headset
+================================
+
+- Make sure that your usb headset is recognised by using:
+lsusb
+cat asound/cards
+
+- Make snd-usb-audio as a default choice
+
+cat /etc/modprobe.d/sound.conf
+alias snd-card-0 snd-hda-intel
+options snd-usb-audio index=0
+options snd-hda-intel index=1
+
 STEP. Set up Alternatives for GCC
 =================================
 
