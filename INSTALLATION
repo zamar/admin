@@ -24,16 +24,26 @@ STEP. Prepare apt
 
 - Edit /etc/apt/sources.list, it should look like following:
 
-deb http://ftp.ie.debian.org/debian/ wheezy main contrib non-free
-deb-src http://ftp.ie.debian.org/debian/ wheezy main contrib non-free
+# Main (stable)
+deb http://ftp.ie.debian.org/debian/ jessie main contrib non-free
+deb-src http://ftp.ie.debian.org/debian/ jessie main contrib non-free
 
-deb http://security.debian.org/ wheezy/updates main contrib non-free
-deb-src http://security.debian.org/ wheezy/updates main contrib non-free
+# Main (unstable)
+#deb http://ftp.ie.debian.org/debian/ unstable main contrib non-free
 
-deb http://ftp.ie.debian.org/debian/ wheezy-updates main contrib non-free
-deb-src http://ftp.ie.debian.org/debian/ wheezy-updates main contrib non-free
+# Security (stable)
+deb http://security.debian.org/ jessie/updates main contrib
+deb-src http://security.debian.org/ jessie/updates main contrib
 
-deb http://www.deb-multimedia.org wheezy main non-free
+# Main-updates (stable)
+deb http://ftp.ie.debian.org/debian/ jessie-updates main contrib non-free
+deb-src http://ftp.ie.debian.org/debian/ jessie-updates main contrib non-free
+
+# Multimedia (stable)
+deb http://www.deb-multimedia.org jessie main non-free
+
+#Backports (stable)
+deb http://http.debian.net/debian jessie-backports main
 
 - Edit /etc/apt/apt.conf to increase default cache-size
 
