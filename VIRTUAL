@@ -1,0 +1,18 @@
+Example about how to set up and run debian sid under qemu.
+
+Create img:
+===========
+
+qemu-img create sid.img 2G
+
+Install OS:
+===========
+
+qemu-system-x86_64 -hda sid.img -cdrom debian-testing-amd64-netinst.iso -boot d -m 512
+qemu-system-x86_64 -hda sid.img -cdrom debian-testing-amd64-netinst.iso -m 512
+
+Install GCC:
+============
+
+apt-get install vim git gcc-snapshot build-essential
+
