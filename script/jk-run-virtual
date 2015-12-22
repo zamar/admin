@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+echo "Running debian sid..."
+
+cd $HOME/virtual
+qemu-system-x86_64 -enable-kvm -hda sid.img -m 512

@@ -266,6 +266,15 @@ sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.5 60 --
 sudo update-alternatives --config clang
 sudo update-alternatives --config gcc
 
+STEP. Don't go to sleep when laptop lid is closed
+=================================================
+
+1) Add the following line in /etc/systemd/logind.conf
+HandleLidSwitch=ignore
+
+2) Restart systemd-logind
+sudo restart systemd-logind
+
 STEP. Bring in Personal programs and scripts
 ============================================
 
