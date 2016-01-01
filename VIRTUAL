@@ -5,7 +5,7 @@ Enable KVM support:
 
 - Enable virtualization in BIOS
 
-sudo apt-get install qemu-kvm libvirt-bin
+sudo apt-get install qemu-kvm libvirt-bin openbios-ppc
 adduser jkiiski kvm
 modprobe kvm_intel
 
@@ -13,12 +13,16 @@ Create img:
 ===========
 
 qemu-img create sid.img 10G
+qemu-img create ppc.img 5G
 
 Install OS:
 ===========
 
 qemu-system-x86_64 -enable-kvm -hda sid.img -cdrom debian-testing-amd64-netinst.iso -boot d -m 512
 qemu-system-x86_64 -enable-kvm -hda sid.img -m 512
+
+qemu-system-ppc -hda ppc.img -cdrom debian-jessie-ppc-netinst.iso -boot d -m 512
+qemu-system-x86_64 -hda ppc.img -m 512
 
 Bring up Eth0:
 ==============
@@ -32,5 +36,5 @@ Install Compilers etc.:
 deb http://ftp.ie.debian.org/debian/ unstable main contrib non-free
 
 apt-get install build-essential vim git 
-apt-get install g++-4.8 g++-4.9 g++-5
+apt-get install g++-4.8 g++-4.9 g++-5 gcc-snapshot
 apt-get install clang-3.5 clang-3.6 clang-3.7 clang-3.8 
