@@ -1,0 +1,18 @@
+sudo add-apt-repository ppa:jonathonf/vim
+sudo apt-get update
+# Check which version of vim will be installed -- should install vim 8.0
+apt-cache policy vim
+sudo apt-get install vim
+
+vim
+# Ensure plugins are up-to-date
+:PluginUpdate
+
+sudo apt-get install clang-3.6
+cd ~/.vim/bundle/YouCompleteMe/
+CXX=clang-3.6 ./install.py --clang-completer
+
+Debugging YCM failures
+:YcmDiag
+:YcmDebugInfo
+:YcmCompleter ClearCompilationFlagCache

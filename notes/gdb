@@ -1,0 +1,15 @@
+Running sdl under gdb:
+======================
+
+Edit sim/sdl/visualize_sdl.sh:
+Add: vim "$runnercmd"
+When running the script, replace: "exec" with "gdb --args"
+
+Planner core dumps analysis (by glinscott):
+===========================================
+
+To get the callstack I checked out the sha from that build, built the planner
+node using the same flags as vehicle `--config=cuda -c opt --copt -g`,
+downloaded the coredump from the data catalog, then ran `
+gdb ~/driving/bazel-bin/vehicle/planner/node/planner_node
+20170201T163439-kitt_02-6934d233-0000-planner_node__1000__1485967028.core`.

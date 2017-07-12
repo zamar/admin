@@ -1,0 +1,67 @@
+Installation:
+=============
+
+./configure --with-features=huge \
+            --enable-multibyte \
+            --enable-pythoninterp=yes \
+            --with-python-config-dir=/usr/lib/python2.7/config \
+#           --enable-python3interp=yes \
+#           --with-python3-config-dir=/usr/lib/python3.5/config \
+#           --enable-rubyinterp=yes \
+#           --enable-perlinterp=yes \
+#           --enable-luainterp=yes \
+#           --enable-gui=gtk2 --enable-cscope --prefix=/usr
+
+./configure --with-features=huge --enable-multibyte --enable-pythoninterp=yes --with-python-config-dir=/usr/lib/python2.7/config-x86_64-linux-gnu
+
+Commands:
+=========
+
+c = change
+r = replace
+o/O = open line below/above
+A = append at the end of the line
+
+G = Move to the bottom of the file
+gg = Move to the start of the file
+CTRL+O/CTRL+I = moving back and forth
+
+:!cmd = Execute command
+:sh = Start a shell
+:r = Reads a file
+
+:set (no)ic = Set ignore case
+:set paste = Set paste mode
+
+:CTRL+D/tab = command completion
+
+Config:
+=======
+
+" Copying between files
+vmap <leader>y :w! /tmp/vitmp<CR> 
+nmap <leader>p :r! cat /tmp/vitmp<CR>
+
+Plugins
+=======
+
+Vundle:
+-------
+
+git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
+Plugin 'VundleVim/Vundle.vim'
+
+YouCompleteMe
+-------------
+
+See: https://gist.github.com/glinscott/7dbe80e99e1684462bab
+
+Plugin 'Valloric/YouCompleteMe'
+
+Problem solving:
+cd  ~/.vim/bundle/YouCompleteMe
+git clean -f
+git pull
+git submodule update --recursive --init
+./install.py --clang-completer
+

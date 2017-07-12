@@ -1,0 +1,4 @@
+<.bazelrc>
+build --config=cuda -c opt                                                     
+build --config=kraken
+</.bazelrc>
