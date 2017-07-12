@@ -47,3 +47,5 @@ sshbackup /etc/sshbackup/meripeto_work_snapshot.backup
 sshbackup /etc/sshbackup/meripeto_work_sync.backup
 umount-usb
 
+AMAZON:
+while true; do aws s3 sync /data/pics s3://zamar-pics-mirror --storage-class STANDARD_IA; done
