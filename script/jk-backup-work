@@ -1,4 +1,0 @@
-#!/bin/bash
-
-sshbackup /etc/sshbackup/meripeto_work_snapshot.backup 
-sshbackup /etc/sshbackup/meripeto_work_sync.backup

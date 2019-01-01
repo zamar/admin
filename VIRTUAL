@@ -6,7 +6,7 @@ Enable KVM support:
 - Enable virtualization in BIOS
 
 sudo apt-get install qemu-kvm libvirt-bin openbios-ppc
-adduser jkiiski kvm
+adduser joona kvm
 modprobe kvm_intel
 
 Create img:

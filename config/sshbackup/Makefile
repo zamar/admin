@@ -1,5 +1,5 @@
 CONFDIR = /etc/sshbackup
-CONFFILES = meripeto_pics_sync.backup meripeto_pics_snapshot.backup meripeto_work_snapshot.backup meripeto_work_sync.backup
+CONFFILES = pics_sync.backup pics_snapshot.backup home_snapshot.backup home_sync.backup
 
 default:
 	true

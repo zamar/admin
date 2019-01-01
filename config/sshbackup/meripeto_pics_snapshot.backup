@@ -1,5 +1,0 @@
-DIRS="/data/pics"
-METHOD="snapshot"
-TARGETHOST="zamar@localhost"
-TARGETDIR="/usbdisk/backup/snapshot"
-TARGETFILEPREFIX="pics_snapshot_"

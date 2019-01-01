@@ -1,4 +1,0 @@
-DIRS="/data/pics"
-METHOD="sync"
-TARGETHOST="zamar@localhost"
-TARGETDIR="/usbdisk/backup/mirror"

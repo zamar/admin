@@ -1,6 +1,0 @@
-<.xinitrc>
-gnome-panel &
-exec gnome-session
-</.xinitrc>
-
-startx -- :1

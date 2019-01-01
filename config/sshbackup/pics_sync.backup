@@ -1,0 +1,4 @@
+DIRS="/media/joona/59ab929e-4405-40e4-8ec0-76f6bcdb82d2/pics"
+METHOD="sync"
+TARGETHOST="joona@localhost"
+TARGETDIR="/media/joona/6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a/backup/mirror"

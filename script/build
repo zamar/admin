@@ -1,4 +1,0 @@
-#!/bin/sh
-
-make build ARCH=x86-64-modern
-

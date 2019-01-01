@@ -1,0 +1,45 @@
+SECTION. Set up AWS credentials
+
+* Set up aws credentials (user zamar):
+`aws configure`
+AWS Access Key ID [****************MFOQ]: 
+AWS Secret Access Key [****************5klX]: 
+Default region name [us-west-1]: 
+Default output format [json]:
+
+Salaiset avaimet:
+- Kotiarkisto, Irlanti, kohta 27
+- S-posti: "Amazon access for your user"
+
+SECTION. Backup photos
+
+* Execute Once a year (01/01/20xx)
+
+- Move photos from SIM-card to "MASTER" usb drive
+  "59ab929e-4405-40e4-8ec0-76f6bcdb82d2" under "pics" folder.
+
+- Sync pics from "MASTER" usb drive "59ab929e-4405-40e4-8ec0-76f6bcdb82d2" to
+  "BACKUP" usb drive "6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a", execute:
+  `sshbackup /etc/sshbackup/pics_sync.backup`
+
+- Snap pics from "MASTER" usb drive "59ab929e-4405-40e4-8ec0-76f6bcdb82d2" to
+  "BACKUP" usb drive "6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a", execute:
+  `sshbackup /etc/sshbackup/pics_snapshot.backup`
+
+As user zamar, execute:                                                                  
+  `aws s3 sync joona/59ab929e-4405-40e4-8ec0-76f6bcdb82d2/pics s3://zamar-mirror-pics/pics --storage-class STANDARD_IA`
+
+SECTION. Backup home and myprogs
+
+* The following Directories to be backed up:
+- /home/joona/home
+- /var/lib/myprogs
+
+- Sync home and myprogs to "BACKUP" usb drive "6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a", execute:
+  `sshbackup /etc/sshbackup/home_sync.backup`
+
+- Snap home and myprogs to "BACKUP" usb drive "6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a", execute:
+  `sshbackup /etc/sshbackup/home_snapshot.backup`
+
+As user zamar, execute:
+  `sudo aws s3 sync /home/joona/home s3://zamar-mirror-home/home --storage-class STANDARD_IA`

@@ -1,5 +1,0 @@
-sudo mount -t nfs 172.16.10.110:/mnt/pool0/flashblade /mnt/flashblade
-
-sim/metrics/sdl_pipedream.sh --regenerate_perception //log_tests/scenarios:all_scenarios --test_priority 'p0,p1,p2'
-
-Results will be available on Marvel at https://marvel.zooxlabs.com/#/runs/35ccb79a-457c-4fc5-a9d0-32a0ba195a42

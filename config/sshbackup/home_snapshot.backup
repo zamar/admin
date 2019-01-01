@@ -1,0 +1,5 @@
+DIRS="/var/lib/myprogs /home/joona/home"
+METHOD="snapshot"
+TARGETHOST="joona@localhost"
+TARGETDIR="/media/joona/6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a/backup/snapshot"
+TARGETFILEPREFIX="home_snapshot_"

@@ -13,39 +13,3 @@ SECTION. Keeping admin/ directory up to date
 ============================================
 
 Update src/ script/ config/ subdirectories with latest software, scripts and config.
-
-SECTION. Backups
-================
-
-SCOPE:
-
-- The following Directories to be backed up:
-/home/zamar/work
-/var/lib/myprogs
-/data/pics
-
-SETUP:
-
-- Create target directory in another server or usbdisk
-- If using another server, setup key authentication between servers (keys in ~/.ssh)
-- Install sshbackup from ~/work/src/sshbackup
-- Edit and install config from ~/work/config/sshbackup
-
-EXECUTION:
-
-- /data/pics : Once a year (01/01/20xx)
-
-mount-usb
-sshbackup /etc/sshbackup/meripeto_pics_snapshot.backup
-sshbackup /etc/sshbackup/meripeto_pics_sync.backup
-umount-usb
-
-- /home/zamar/work, /var/lib/myprogs : After significant development or changes have been made since last backup.
-
-mount-usb
-sshbackup /etc/sshbackup/meripeto_work_snapshot.backup
-sshbackup /etc/sshbackup/meripeto_work_sync.backup
-umount-usb
-
-AMAZON:
-while true; do aws s3 sync /data/pics s3://zamar-pics-mirror --storage-class STANDARD_IA; done
