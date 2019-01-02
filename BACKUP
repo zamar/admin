@@ -41,7 +41,7 @@ SECTION. Backup home and myprogs
 - Back up package listing:
   `cp /var/lib/myprogs/myprogs.* ~/home/admin/config/myprogs`
 
-- Back up web browser books marks into ~/home/admin/dumps
+- Back up web browser books marks into ~/home/admin/bookmarks
 
 - Sync home and myprogs to "BACKUP" usb drive "6dfc171e-ac10-4c17-b8d6-6fd22c13cd5a", execute:
   `sshbackup /etc/sshbackup/home_sync.backup`
