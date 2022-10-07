@@ -1,4 +1,4 @@
-" Plugins
+""" Plugins
 " Manually install junegunn/vim-plug
 call plug#begin()
 Plug 'junegunn/fzf', { 'do': { -> fzf#install() } } " Fuzzy file search
@@ -23,7 +23,7 @@ command! -nargs=0 GutentagsInit :call system("ctags -L /dev/null") " create an e
 
 call plug#end()
 
-" General options
+""" General options
 syntax enable               " enable syntax processing
 filetype plugin indent on   " load filetype-specific indent files
 
@@ -56,14 +56,14 @@ set backspace=indent,eol,start "Allow backspace to operate freely across regions
 set belloff=all     " Disable bell for all events
 set shada=!,'500,<50,s10,h " Store nvim history/registers etc. between sessions
 
-" Indentation
+""" Indentation
 set shiftwidth=2    " number of spaces to use for autoindent
 set softtabstop=2   " number of spaces in tab when editing
 set expandtab       " automatically expand tabs to spaces
 set smarttab        " <Tab> at line start inserts `shiftwidth` no of blanks
 set autoindent     " Copy indent from current line to new line
 
-" File and directory listing
+""" File and directory listing
 set wildmenu        " Command completion support
 set wildmode=full   " Complete the next full match
 
@@ -79,11 +79,13 @@ set suffixes-=.h      " suffixes are de-prioritized when selecting with wildmenu
 set suffixes+=.DS_Store
 set suffixes+=._.DS_Store
 
-" Appearance
+""" Appearance
 set list listchars=tab:»-,trail:·,nbsp:×,extends:❯,precedes:❮  " Highlight undesirable characters in code
 set fillchars+=vert:┃ " Use thin vertical split separator
 set fillchars+=fold:\ 
 
+
+""" Clipboard
 
 """"""""""""" Disabled for now
 " set spellcapcheck=  " Don't check for capitalization after period
