@@ -87,3 +87,8 @@ set fillchars+=fold:\
 
 """ Clipboard
 set mouse= " Selection by mouse (hack!) until the clipboard over ssh works
+
+""" Mappings
+
+" Terminal escape
+:tnoremap <Esc> <C-\><C-n>
