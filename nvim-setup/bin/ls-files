@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Recursively list all "files of interest" in pwd
+#
+# Usage:
+# $ ls-files
+
+list_files_fallback() {
+  # Based on my benchmarks, rg appears to be the faster than fd.
+  # See https://github.com/sharkdp/fd/issues/616
+  if [ -x "$(command -v rg)" ]; then
+    rg --ignore-file ~/.rgignore --color=never --hidden --no-messages --files
+  elif [ -x "$(command -v fd)" ]; then
+    fd --ignore-file ~/.fdignore --color=never --hidden --type f
+  elif [ -x "$(command -v fdfind)" ]; then
+    fdfind --ignore-file ~/.fdignore --color=never --hidden --type f
+  else
+    find . -type f
+  fi
+}
+
+list_files_git() {
+  # git ls-files is extremely fast for git repos but since we also
+  # want to list untracked files, we need to call git ls-files with
+  # --others. This slows the output significantly. To prevent this
+  # slowdown, we use two independent commands, one to list tracked
+  # files and another one to list untracked files.
+  #
+  # Another caveat of this approach is that if a file has been
+  # deleted but has not been staged, git ls-files will still show
+  # it in the list of files
+  #
+  # --recurse-submodules requires git version >= 2.14
+  git ls-files --recurse-submodules 2>/dev/null &&
+    git ls-files --others --exclude-standard 2>/dev/null
+}
+
+list_files_git || list_files_fallback
