@@ -86,20 +86,4 @@ set fillchars+=fold:\
 
 
 """ Clipboard
-
-""""""""""""" Disabled for now
-" set spellcapcheck=  " Don't check for capitalization after period
-" if exists('+spelloptions')
-"    set spelloptions=camel
-" endif
-" let &spellfile = expand("<sfile>:p:h") . "/spell/spelling.utf-8.add" " zg - set good word, zw - set wrong word
-
-" " Make vim behave the same as Neovim. I still need
-" " to explore these options to see what I really need
-"set display=lastline
-"set formatoptions=tcqj
-"set nolangremap
-"set startofline
-"set tags=./tags;,tags
-"set ttimeoutlen=50
-
+set mouse= " Selection by mouse (hack!) until the clipboard over ssh works
